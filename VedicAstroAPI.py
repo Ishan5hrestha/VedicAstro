@@ -1284,13 +1284,14 @@ async def get_fetcher_page():
             const minute = parseInt(timeParts[1] || '0');
             const second = parseInt(timeParts[2] || '0');
             
-            const formData = {
+            // Fetch data at 0 seconds
+            const formData0 = {
                 year: year,
                 month: month,
                 day: day,
                 hour: hour,
                 minute: minute,
-                second: second,
+                second: 0,
                 utc: utc,
                 latitude: latitude,
                 longitude: longitude,
@@ -1299,24 +1300,64 @@ async def get_fetcher_page():
                 return_style: 'string'
             };
             
-            const response = await fetch('/get_all_horoscope_data', {
+            const response0 = await fetch('/get_all_horoscope_data', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(formData)
+                body: JSON.stringify(formData0)
             });
             
-            if (!response.ok) {
+            if (!response0.ok) {
                 throw new Error('Failed to fetch data for time ' + timeStr);
             }
             
-            const data = await response.json();
+            const data0 = await response0.json();
             
-            // Extract houses 1, 6, 11
-            const house1 = data.houses_data.find(h => h.HouseNr === 1);
-            const house6 = data.houses_data.find(h => h.HouseNr === 6);
-            const house11 = data.houses_data.find(h => h.HouseNr === 11);
+            // Fetch data at 45 seconds
+            const formData45 = {
+                year: year,
+                month: month,
+                day: day,
+                hour: hour,
+                minute: minute,
+                second: 45,
+                utc: utc,
+                latitude: latitude,
+                longitude: longitude,
+                ayanamsa: 'Krishnamurti',
+                house_system: 'Placidus',
+                return_style: 'string'
+            };
+            
+            const response45 = await fetch('/get_all_horoscope_data', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData45)
+            });
+            
+            if (!response45.ok) {
+                throw new Error('Failed to fetch data at 45 seconds for time ' + timeStr);
+            }
+            
+            const data45 = await response45.json();
+            
+            // Extract houses 1, 6, 11 at 0 seconds
+            const house1_0 = data0.houses_data.find(h => h.HouseNr === 1);
+            const house6_0 = data0.houses_data.find(h => h.HouseNr === 6);
+            const house11_0 = data0.houses_data.find(h => h.HouseNr === 11);
+            
+            // Extract houses 1, 6, 11 at 45 seconds
+            const house1_45 = data45.houses_data.find(h => h.HouseNr === 1);
+            const house6_45 = data45.houses_data.find(h => h.HouseNr === 6);
+            const house11_45 = data45.houses_data.find(h => h.HouseNr === 11);
+            
+            // Check if sublords changed
+            const house1Void = house1_0.SubLord !== house1_45.SubLord;
+            const house6Void = house6_0.SubLord !== house6_45.SubLord;
+            const house11Void = house11_0.SubLord !== house11_45.SubLord;
             
             // Format time for display
             const hourStr = hour.toString().padStart(2, '0');
@@ -1325,9 +1366,12 @@ async def get_fetcher_page():
             
             return {
                 time: timeDisplay,
-                house1: house1,
-                house6: house6,
-                house11: house11
+                house1: house1_0,
+                house6: house6_0,
+                house11: house11_0,
+                house1Void: house1Void,
+                house6Void: house6Void,
+                house11Void: house11Void
             };
         }
         
@@ -1352,22 +1396,32 @@ async def get_fetcher_page():
             `;
             tbody.appendChild(rasiRow);
             
-            const nakshatraRow = document.createElement('tr');
-            nakshatraRow.innerHTML = `
-                <td class="label-cell">nakshatra</td>
-                <td>${result.house1.Nakshatra}</td>
-                <td>${result.house6.Nakshatra}</td>
-                <td>${result.house11.Nakshatra}</td>
+            const starLordRow = document.createElement('tr');
+            starLordRow.innerHTML = `
+                <td class="label-cell">star lord</td>
+                <td>${result.house1.NakshatraLord}</td>
+                <td>${result.house6.NakshatraLord}</td>
+                <td>${result.house11.NakshatraLord}</td>
             `;
-            tbody.appendChild(nakshatraRow);
+            tbody.appendChild(starLordRow);
+            
+            const house1SubLord = result.house1Void 
+                ? '<span style="color: #dc2626; font-weight: 600;">' + result.house1.SubLord + ' [VOID]</span>'
+                : result.house1.SubLord;
+            const house6SubLord = result.house6Void 
+                ? '<span style="color: #dc2626; font-weight: 600;">' + result.house6.SubLord + ' [VOID]</span>'
+                : result.house6.SubLord;
+            const house11SubLord = result.house11Void 
+                ? '<span style="color: #dc2626; font-weight: 600;">' + result.house11.SubLord + ' [VOID]</span>'
+                : result.house11.SubLord;
             
             const sublordRow = document.createElement('tr');
             sublordRow.className = 'divider-row';
             sublordRow.innerHTML = `
                 <td class="label-cell">sublord</td>
-                <td>${result.house1.SubLord}</td>
-                <td>${result.house6.SubLord}</td>
-                <td>${result.house11.SubLord}</td>
+                <td>${house1SubLord}</td>
+                <td>${house6SubLord}</td>
+                <td>${house11SubLord}</td>
             `;
             tbody.appendChild(sublordRow);
         }
@@ -1376,10 +1430,14 @@ async def get_fetcher_page():
             let clipboardText = '';
             
             fetchedData.forEach(result => {
+                const house1SubLord = result.house1Void ? result.house1.SubLord + ' [VOID]' : result.house1.SubLord;
+                const house6SubLord = result.house6Void ? result.house6.SubLord + ' [VOID]' : result.house6.SubLord;
+                const house11SubLord = result.house11Void ? result.house11.SubLord + ' [VOID]' : result.house11.SubLord;
+                
                 clipboardText += result.time + '\\t1\\t6\\t11\\n';
                 clipboardText += 'rasi lord\\t' + result.house1.RasiLord + '\\t' + result.house6.RasiLord + '\\t' + result.house11.RasiLord + '\\n';
-                clipboardText += 'nakshatra\\t' + result.house1.Nakshatra + '\\t' + result.house6.Nakshatra + '\\t' + result.house11.Nakshatra + '\\n';
-                clipboardText += 'sublord\\t' + result.house1.SubLord + '\\t' + result.house6.SubLord + '\\t' + result.house11.SubLord + '\\n';
+                clipboardText += 'star lord\\t' + result.house1.NakshatraLord + '\\t' + result.house6.NakshatraLord + '\\t' + result.house11.NakshatraLord + '\\n';
+                clipboardText += 'sublord\\t' + house1SubLord + '\\t' + house6SubLord + '\\t' + house11SubLord + '\\n';
             });
             
             navigator.clipboard.writeText(clipboardText).then(() => {
