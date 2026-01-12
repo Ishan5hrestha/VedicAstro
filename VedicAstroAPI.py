@@ -955,6 +955,51 @@ async def get_fetcher_page():
             margin: 4px 0;
         }
         
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 22px;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #cbd5e1;
+            transition: 0.3s;
+            border-radius: 22px;
+        }
+        
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .toggle-slider {
+            background-color: var(--primary-color);
+        }
+        
+        input:checked + .toggle-slider:before {
+            transform: translateX(22px);
+        }
+        
         @media (max-width: 768px) {
             .form-row {
                 grid-template-columns: 1fr;
@@ -1003,31 +1048,99 @@ async def get_fetcher_page():
                 <div class="form-row">
                     <div class="form-group">
                         <label for="year">Year</label>
-                        <input type="number" id="year" name="year" value="2025" required min="1900" max="2100">
+                        <input type="number" id="year" name="year" required min="1900" max="2100">
                     </div>
                     <div class="form-group">
                         <label for="month">Month</label>
-                        <input type="number" id="month" name="month" value="1" required min="1" max="12">
+                        <input type="number" id="month" name="month" required min="1" max="12">
                     </div>
                     <div class="form-group">
                         <label for="day">Day</label>
-                        <input type="number" id="day" name="day" value="10" required min="1" max="31">
+                        <input type="number" id="day" name="day" required min="1" max="31">
                     </div>
                 </div>
                 
-                <div class="section-header">Location</div>
+                <div class="section-header">
+                    Location
+                    <label style="float: right; font-size: 0.75rem; font-weight: 400; text-transform: none; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <span style="color: var(--text-secondary);">Decimal</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="dmsToggle" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <span style="color: var(--text-secondary);">DMS</span>
+                    </label>
+                </div>
+                
+                <div id="decimalInputs" style="display: none;">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="latitude">Latitude</label>
+                            <input type="number" id="latitude" name="latitude" value="55.0000" step="0.0001" min="-90" max="90">
+                        </div>
+                        <div class="form-group">
+                            <label for="longitude">Longitude</label>
+                            <input type="number" id="longitude" name="longitude" value="-1.6667" step="0.0001" min="-180" max="180">
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="dmsInputs">
+                    <div style="margin-bottom: 12px;">
+                        <div style="font-size: 0.813rem; font-weight: 500; color: var(--text-primary); margin-bottom: 8px;">Latitude</div>
+                        <div style="display: grid; grid-template-columns: 1fr 80px 1fr 1fr; gap: 8px;">
+                            <div class="form-group" style="margin: 0;">
+                                <label for="latDeg" style="font-size: 0.75rem;">Degrees</label>
+                                <input type="number" id="latDeg" min="0" max="90" value="55" style="padding: 8px 10px;">
+                            </div>
+                            <div class="form-group" style="margin: 0;">
+                                <label for="latDir" style="font-size: 0.75rem;">Dir</label>
+                                <select id="latDir" style="padding: 8px 10px;">
+                                    <option value="N" selected>N</option>
+                                    <option value="S">S</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="margin: 0;">
+                                <label for="latMin" style="font-size: 0.75rem;">Minutes</label>
+                                <input type="number" id="latMin" min="0" max="59" value="0" style="padding: 8px 10px;">
+                            </div>
+                            <div class="form-group" style="margin: 0;">
+                                <label for="latSec" style="font-size: 0.75rem;">Seconds</label>
+                                <input type="number" id="latSec" min="0" max="59" value="0" step="0.01" style="padding: 8px 10px;">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-bottom: 12px;">
+                        <div style="font-size: 0.813rem; font-weight: 500; color: var(--text-primary); margin-bottom: 8px;">Longitude</div>
+                        <div style="display: grid; grid-template-columns: 1fr 80px 1fr 1fr; gap: 8px;">
+                            <div class="form-group" style="margin: 0;">
+                                <label for="lonDeg" style="font-size: 0.75rem;">Degrees</label>
+                                <input type="number" id="lonDeg" min="0" max="180" value="1" style="padding: 8px 10px;">
+                            </div>
+                            <div class="form-group" style="margin: 0;">
+                                <label for="lonDir" style="font-size: 0.75rem;">Dir</label>
+                                <select id="lonDir" style="padding: 8px 10px;">
+                                    <option value="E">E</option>
+                                    <option value="W" selected>W</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="margin: 0;">
+                                <label for="lonMin" style="font-size: 0.75rem;">Minutes</label>
+                                <input type="number" id="lonMin" min="0" max="59" value="40" style="padding: 8px 10px;">
+                            </div>
+                            <div class="form-group" style="margin: 0;">
+                                <label for="lonSec" style="font-size: 0.75rem;">Seconds</label>
+                                <input type="number" id="lonSec" min="0" max="59" value="0" step="0.01" style="padding: 8px 10px;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="latitude">Latitude</label>
-                        <input type="number" id="latitude" name="latitude" value="28.2323" required step="0.0001" min="-90" max="90">
-                    </div>
-                    <div class="form-group">
-                        <label for="longitude">Longitude</label>
-                        <input type="number" id="longitude" name="longitude" value="83.923" required step="0.0001" min="-180" max="180">
-                    </div>
-                        <div class="form-group">
-                            <label for="utc">Timezone</label>
-                            <select id="utc" name="utc" required>
+                        <label for="utc">Timezone</label>
+                        <select id="utc" name="utc" required>
                                 <optgroup label="Africa">
                                     <option value="Africa/Abidjan">Africa/Abidjan</option>
                                     <option value="Africa/Accra">Africa/Accra</option>
@@ -1213,8 +1326,64 @@ async def get_fetcher_page():
         const results = document.getElementById('results');
         const errorMsg = document.getElementById('errorMsg');
         const successMsg = document.getElementById('successMsg');
+        const dmsToggle = document.getElementById('dmsToggle');
+        const decimalInputs = document.getElementById('decimalInputs');
+        const dmsInputs = document.getElementById('dmsInputs');
         
         let fetchedData = [];
+        
+        // Set today's date as default
+        const today = new Date();
+        document.getElementById('year').value = today.getFullYear();
+        document.getElementById('month').value = today.getMonth() + 1;
+        document.getElementById('day').value = today.getDate();
+        
+        // Toggle between decimal and DMS inputs
+        dmsToggle.addEventListener('change', function() {
+            if (this.checked) {
+                decimalInputs.style.display = 'none';
+                dmsInputs.style.display = 'block';
+            } else {
+                decimalInputs.style.display = 'block';
+                dmsInputs.style.display = 'none';
+            }
+        });
+        
+        // Convert DMS to Decimal Degrees
+        function dmsToDecimal(degrees, minutes, seconds, direction) {
+            let decimal = parseFloat(degrees) + parseFloat(minutes) / 60 + parseFloat(seconds) / 3600;
+            if (direction === 'S' || direction === 'W') {
+                decimal = -decimal;
+            }
+            return decimal;
+        }
+        
+        // Get latitude and longitude based on current mode
+        function getCoordinates() {
+            if (dmsToggle.checked) {
+                // DMS Mode
+                const latDeg = document.getElementById('latDeg').value;
+                const latMin = document.getElementById('latMin').value;
+                const latSec = document.getElementById('latSec').value;
+                const latDir = document.getElementById('latDir').value;
+                
+                const lonDeg = document.getElementById('lonDeg').value;
+                const lonMin = document.getElementById('lonMin').value;
+                const lonSec = document.getElementById('lonSec').value;
+                const lonDir = document.getElementById('lonDir').value;
+                
+                const latitude = dmsToDecimal(latDeg, latMin, latSec, latDir);
+                const longitude = dmsToDecimal(lonDeg, lonMin, lonSec, lonDir);
+                
+                return { latitude, longitude };
+            } else {
+                // Decimal Mode
+                const latitude = parseFloat(document.getElementById('latitude').value);
+                const longitude = parseFloat(document.getElementById('longitude').value);
+                
+                return { latitude, longitude };
+            }
+        }
         
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -1244,8 +1413,9 @@ async def get_fetcher_page():
             const year = parseInt(document.getElementById('year').value);
             const month = parseInt(document.getElementById('month').value);
             const day = parseInt(document.getElementById('day').value);
-            const latitude = parseFloat(document.getElementById('latitude').value);
-            const longitude = parseFloat(document.getElementById('longitude').value);
+            const coords = getCoordinates();
+            const latitude = coords.latitude;
+            const longitude = coords.longitude;
             const utc = document.getElementById('utc').value;
             
             fetchedData = [];
