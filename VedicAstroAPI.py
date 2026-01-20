@@ -2030,9 +2030,10 @@ async def get_event_analysis_page():
             <div class="info-banner">
                 <strong>Instructions:</strong>
                 <ul>
-                    <li>Enter event date/time and location</li>
-                    <li>Add people (one per line): Name, BirthDate (e.g., Michael, 10/15/82)</li>
-                    <li>Select planets to analyze</li>
+                    <li>Enter event date/time and event location</li>
+                    <li>Enter birth location (used for all people)</li>
+                    <li>Add people (one per line): Name, DD/MM/YYYY OR just DD/MM/YYYY</li>
+                    <li>Example: Michael, 15/10/1982 OR just 15/10/1982</li>
                     <li>Results show format: HxH (Planet House x Nakshatra Lord House)</li>
                 </ul>
             </div>
@@ -2041,8 +2042,8 @@ async def get_event_analysis_page():
                 <div class="section-header">Event Details</div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="eventDate">Event Date (DD/MM/YY)</label>
-                        <input type="text" id="eventDate" placeholder="17/01/26" required>
+                        <label for="eventDate">Event Date (DD/MM/YYYY)</label>
+                        <input type="text" id="eventDate" placeholder="17/01/2026" required>
                     </div>
                     <div class="form-group">
                         <label for="eventHour">Hour (0-23)</label>
@@ -2055,52 +2056,52 @@ async def get_event_analysis_page():
                 </div>
                 
                 <div class="section-header">
-                    Location (Default: London, UK)
+                    Event Location (Default: London, UK)
                     <label style="float: right; font-size: 0.75rem; font-weight: 400; text-transform: none; display: flex; align-items: center; gap: 8px; cursor: pointer;">
                         <span style="color: var(--text-secondary);">Decimal</span>
                         <label class="toggle-switch">
-                            <input type="checkbox" id="dmsToggle" checked>
+                            <input type="checkbox" id="eventDmsToggle" checked>
                             <span class="toggle-slider"></span>
                         </label>
                         <span style="color: var(--text-secondary);">DMS</span>
                     </label>
                 </div>
                 
-                <div id="decimalInputs" style="display: none;">
+                <div id="eventDecimalInputs" style="display: none;">
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="latitude">Latitude</label>
-                            <input type="number" id="latitude" value="51.5074" step="0.0001" min="-90" max="90">
+                            <label for="eventLatitude">Latitude</label>
+                            <input type="number" id="eventLatitude" value="51.5074" step="0.0001" min="-90" max="90">
                         </div>
                         <div class="form-group">
-                            <label for="longitude">Longitude</label>
-                            <input type="number" id="longitude" value="-0.1278" step="0.0001" min="-180" max="180">
+                            <label for="eventLongitude">Longitude</label>
+                            <input type="number" id="eventLongitude" value="-0.1278" step="0.0001" min="-180" max="180">
                         </div>
                     </div>
                 </div>
                 
-                <div id="dmsInputs">
+                <div id="eventDmsInputs">
                     <div style="margin-bottom: 12px;">
                         <div style="font-size: 0.813rem; font-weight: 500; color: var(--text-primary); margin-bottom: 8px;">Latitude</div>
                         <div style="display: grid; grid-template-columns: 1fr 80px 1fr 1fr; gap: 8px;">
                             <div class="form-group" style="margin: 0;">
-                                <label for="latDeg" style="font-size: 0.75rem;">Degrees</label>
-                                <input type="number" id="latDeg" min="0" max="90" value="51" style="padding: 8px 10px;">
+                                <label for="eventLatDeg" style="font-size: 0.75rem;">Degrees</label>
+                                <input type="number" id="eventLatDeg" min="0" max="90" value="51" style="padding: 8px 10px;">
                             </div>
                             <div class="form-group" style="margin: 0;">
-                                <label for="latDir" style="font-size: 0.75rem;">Dir</label>
-                                <select id="latDir" style="padding: 8px 10px;">
+                                <label for="eventLatDir" style="font-size: 0.75rem;">Dir</label>
+                                <select id="eventLatDir" style="padding: 8px 10px;">
                                     <option value="N" selected>N</option>
                                     <option value="S">S</option>
                                 </select>
                             </div>
                             <div class="form-group" style="margin: 0;">
-                                <label for="latMin" style="font-size: 0.75rem;">Minutes</label>
-                                <input type="number" id="latMin" min="0" max="59" value="30" style="padding: 8px 10px;">
+                                <label for="eventLatMin" style="font-size: 0.75rem;">Minutes</label>
+                                <input type="number" id="eventLatMin" min="0" max="59" value="30" style="padding: 8px 10px;">
                             </div>
                             <div class="form-group" style="margin: 0;">
-                                <label for="latSec" style="font-size: 0.75rem;">Seconds</label>
-                                <input type="number" id="latSec" min="0" max="59" value="27" step="0.01" style="padding: 8px 10px;">
+                                <label for="eventLatSec" style="font-size: 0.75rem;">Seconds</label>
+                                <input type="number" id="eventLatSec" min="0" max="59" value="27" step="0.01" style="padding: 8px 10px;">
                             </div>
                         </div>
                     </div>
@@ -2109,23 +2110,100 @@ async def get_event_analysis_page():
                         <div style="font-size: 0.813rem; font-weight: 500; color: var(--text-primary); margin-bottom: 8px;">Longitude</div>
                         <div style="display: grid; grid-template-columns: 1fr 80px 1fr 1fr; gap: 8px;">
                             <div class="form-group" style="margin: 0;">
-                                <label for="lonDeg" style="font-size: 0.75rem;">Degrees</label>
-                                <input type="number" id="lonDeg" min="0" max="180" value="0" style="padding: 8px 10px;">
+                                <label for="eventLonDeg" style="font-size: 0.75rem;">Degrees</label>
+                                <input type="number" id="eventLonDeg" min="0" max="180" value="0" style="padding: 8px 10px;">
                             </div>
                             <div class="form-group" style="margin: 0;">
-                                <label for="lonDir" style="font-size: 0.75rem;">Dir</label>
-                                <select id="lonDir" style="padding: 8px 10px;">
+                                <label for="eventLonDir" style="font-size: 0.75rem;">Dir</label>
+                                <select id="eventLonDir" style="padding: 8px 10px;">
                                     <option value="E">E</option>
                                     <option value="W" selected>W</option>
                                 </select>
                             </div>
                             <div class="form-group" style="margin: 0;">
-                                <label for="lonMin" style="font-size: 0.75rem;">Minutes</label>
-                                <input type="number" id="lonMin" min="0" max="59" value="7" style="padding: 8px 10px;">
+                                <label for="eventLonMin" style="font-size: 0.75rem;">Minutes</label>
+                                <input type="number" id="eventLonMin" min="0" max="59" value="7" style="padding: 8px 10px;">
                             </div>
                             <div class="form-group" style="margin: 0;">
-                                <label for="lonSec" style="font-size: 0.75rem;">Seconds</label>
-                                <input type="number" id="lonSec" min="0" max="59" value="40" step="0.01" style="padding: 8px 10px;">
+                                <label for="eventLonSec" style="font-size: 0.75rem;">Seconds</label>
+                                <input type="number" id="eventLonSec" min="0" max="59" value="40" step="0.01" style="padding: 8px 10px;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="section-header">
+                    Birth Location (Default: London, UK)
+                    <label style="float: right; font-size: 0.75rem; font-weight: 400; text-transform: none; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <span style="color: var(--text-secondary);">Decimal</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="birthDmsToggle" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <span style="color: var(--text-secondary);">DMS</span>
+                    </label>
+                </div>
+                
+                <div id="birthDecimalInputs" style="display: none;">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="birthLatitude">Latitude</label>
+                            <input type="number" id="birthLatitude" value="51.5074" step="0.0001" min="-90" max="90">
+                        </div>
+                        <div class="form-group">
+                            <label for="birthLongitude">Longitude</label>
+                            <input type="number" id="birthLongitude" value="-0.1278" step="0.0001" min="-180" max="180">
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="birthDmsInputs">
+                    <div style="margin-bottom: 12px;">
+                        <div style="font-size: 0.813rem; font-weight: 500; color: var(--text-primary); margin-bottom: 8px;">Latitude</div>
+                        <div style="display: grid; grid-template-columns: 1fr 80px 1fr 1fr; gap: 8px;">
+                            <div class="form-group" style="margin: 0;">
+                                <label for="birthLatDeg" style="font-size: 0.75rem;">Degrees</label>
+                                <input type="number" id="birthLatDeg" min="0" max="90" value="51" style="padding: 8px 10px;">
+                            </div>
+                            <div class="form-group" style="margin: 0;">
+                                <label for="birthLatDir" style="font-size: 0.75rem;">Dir</label>
+                                <select id="birthLatDir" style="padding: 8px 10px;">
+                                    <option value="N" selected>N</option>
+                                    <option value="S">S</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="margin: 0;">
+                                <label for="birthLatMin" style="font-size: 0.75rem;">Minutes</label>
+                                <input type="number" id="birthLatMin" min="0" max="59" value="30" style="padding: 8px 10px;">
+                            </div>
+                            <div class="form-group" style="margin: 0;">
+                                <label for="birthLatSec" style="font-size: 0.75rem;">Seconds</label>
+                                <input type="number" id="birthLatSec" min="0" max="59" value="27" step="0.01" style="padding: 8px 10px;">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-bottom: 12px;">
+                        <div style="font-size: 0.813rem; font-weight: 500; color: var(--text-primary); margin-bottom: 8px;">Longitude</div>
+                        <div style="display: grid; grid-template-columns: 1fr 80px 1fr 1fr; gap: 8px;">
+                            <div class="form-group" style="margin: 0;">
+                                <label for="birthLonDeg" style="font-size: 0.75rem;">Degrees</label>
+                                <input type="number" id="birthLonDeg" min="0" max="180" value="0" style="padding: 8px 10px;">
+                            </div>
+                            <div class="form-group" style="margin: 0;">
+                                <label for="birthLonDir" style="font-size: 0.75rem;">Dir</label>
+                                <select id="birthLonDir" style="padding: 8px 10px;">
+                                    <option value="E">E</option>
+                                    <option value="W" selected>W</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="margin: 0;">
+                                <label for="birthLonMin" style="font-size: 0.75rem;">Minutes</label>
+                                <input type="number" id="birthLonMin" min="0" max="59" value="7" style="padding: 8px 10px;">
+                            </div>
+                            <div class="form-group" style="margin: 0;">
+                                <label for="birthLonSec" style="font-size: 0.75rem;">Seconds</label>
+                                <input type="number" id="birthLonSec" min="0" max="59" value="40" step="0.01" style="padding: 8px 10px;">
                             </div>
                         </div>
                     </div>
@@ -2265,8 +2343,8 @@ async def get_event_analysis_page():
                 
                 <div class="section-header">People (Name, BirthDate - one per line)</div>
                 <div class="form-group">
-                    <label for="people">Format: Name, DD/MM/YY or MM/DD/YY</label>
-                    <textarea id="people" placeholder="Michael, 10/15/82&#10;James, 14/12/84&#10;Thomas, 15/5/88" required></textarea>
+                    <label for="people">Format: Name, DD/MM/YYYY OR just DD/MM/YYYY</label>
+                    <textarea id="people" placeholder="Michael, 15/10/1982&#10;James, 14/12/1984&#10;15/05/1988" required></textarea>
                 </div>
                 
                 <div class="section-header">Select Planets to Analyze</div>
@@ -2341,20 +2419,34 @@ async def get_event_analysis_page():
         const results = document.getElementById('results');
         const errorMsg = document.getElementById('errorMsg');
         const successMsg = document.getElementById('successMsg');
-        const dmsToggle = document.getElementById('dmsToggle');
-        const decimalInputs = document.getElementById('decimalInputs');
-        const dmsInputs = document.getElementById('dmsInputs');
+        const eventDmsToggle = document.getElementById('eventDmsToggle');
+        const eventDecimalInputs = document.getElementById('eventDecimalInputs');
+        const eventDmsInputs = document.getElementById('eventDmsInputs');
+        const birthDmsToggle = document.getElementById('birthDmsToggle');
+        const birthDecimalInputs = document.getElementById('birthDecimalInputs');
+        const birthDmsInputs = document.getElementById('birthDmsInputs');
         
         let analysisData = [];
         
-        // Toggle between decimal and DMS inputs
-        dmsToggle.addEventListener('change', function() {
+        // Toggle for event location
+        eventDmsToggle.addEventListener('change', function() {
             if (this.checked) {
-                decimalInputs.style.display = 'none';
-                dmsInputs.style.display = 'block';
+                eventDecimalInputs.style.display = 'none';
+                eventDmsInputs.style.display = 'block';
             } else {
-                decimalInputs.style.display = 'block';
-                dmsInputs.style.display = 'none';
+                eventDecimalInputs.style.display = 'block';
+                eventDmsInputs.style.display = 'none';
+            }
+        });
+        
+        // Toggle for birth location
+        birthDmsToggle.addEventListener('change', function() {
+            if (this.checked) {
+                birthDecimalInputs.style.display = 'none';
+                birthDmsInputs.style.display = 'block';
+            } else {
+                birthDecimalInputs.style.display = 'block';
+                birthDmsInputs.style.display = 'none';
             }
         });
         
@@ -2367,28 +2459,51 @@ async def get_event_analysis_page():
             return decimal;
         }
         
-        // Get latitude and longitude based on current mode
-        function getCoordinates() {
-            if (dmsToggle.checked) {
-                // DMS Mode
-                const latDeg = document.getElementById('latDeg').value;
-                const latMin = document.getElementById('latMin').value;
-                const latSec = document.getElementById('latSec').value;
-                const latDir = document.getElementById('latDir').value;
+        // Get event location coordinates
+        function getEventCoordinates() {
+            if (eventDmsToggle.checked) {
+                const latDeg = document.getElementById('eventLatDeg').value;
+                const latMin = document.getElementById('eventLatMin').value;
+                const latSec = document.getElementById('eventLatSec').value;
+                const latDir = document.getElementById('eventLatDir').value;
                 
-                const lonDeg = document.getElementById('lonDeg').value;
-                const lonMin = document.getElementById('lonMin').value;
-                const lonSec = document.getElementById('lonSec').value;
-                const lonDir = document.getElementById('lonDir').value;
+                const lonDeg = document.getElementById('eventLonDeg').value;
+                const lonMin = document.getElementById('eventLonMin').value;
+                const lonSec = document.getElementById('eventLonSec').value;
+                const lonDir = document.getElementById('eventLonDir').value;
                 
                 const latitude = dmsToDecimal(latDeg, latMin, latSec, latDir);
                 const longitude = dmsToDecimal(lonDeg, lonMin, lonSec, lonDir);
                 
                 return { latitude, longitude };
             } else {
-                // Decimal Mode
-                const latitude = parseFloat(document.getElementById('latitude').value);
-                const longitude = parseFloat(document.getElementById('longitude').value);
+                const latitude = parseFloat(document.getElementById('eventLatitude').value);
+                const longitude = parseFloat(document.getElementById('eventLongitude').value);
+                
+                return { latitude, longitude };
+            }
+        }
+        
+        // Get birth location coordinates
+        function getBirthCoordinates() {
+            if (birthDmsToggle.checked) {
+                const latDeg = document.getElementById('birthLatDeg').value;
+                const latMin = document.getElementById('birthLatMin').value;
+                const latSec = document.getElementById('birthLatSec').value;
+                const latDir = document.getElementById('birthLatDir').value;
+                
+                const lonDeg = document.getElementById('birthLonDeg').value;
+                const lonMin = document.getElementById('birthLonMin').value;
+                const lonSec = document.getElementById('birthLonSec').value;
+                const lonDir = document.getElementById('birthLonDir').value;
+                
+                const latitude = dmsToDecimal(latDeg, latMin, latSec, latDir);
+                const longitude = dmsToDecimal(lonDeg, lonMin, lonSec, lonDir);
+                
+                return { latitude, longitude };
+            } else {
+                const latitude = parseFloat(document.getElementById('birthLatitude').value);
+                const longitude = parseFloat(document.getElementById('birthLongitude').value);
                 
                 return { latitude, longitude };
             }
@@ -2409,13 +2524,18 @@ async def get_event_analysis_page():
                 const eventParts = eventDateStr.split('/');
                 const eventDay = parseInt(eventParts[0]);
                 const eventMonth = parseInt(eventParts[1]);
-                const eventYear = parseInt(eventParts[2]) + 2000; // Assume 20xx
+                const eventYear = parseInt(eventParts[2]); // Full year now
                 const eventHour = parseInt(document.getElementById('eventHour').value);
                 const eventMinute = parseInt(document.getElementById('eventMinute').value);
                 
-                const coords = getCoordinates();
-                const latitude = coords.latitude;
-                const longitude = coords.longitude;
+                const eventCoords = getEventCoordinates();
+                const eventLatitude = eventCoords.latitude;
+                const eventLongitude = eventCoords.longitude;
+                
+                const birthCoords = getBirthCoordinates();
+                const birthLatitude = birthCoords.latitude;
+                const birthLongitude = birthCoords.longitude;
+                
                 const timezone = document.getElementById('timezone').value;
                 
                 // Get selected planets
@@ -2433,20 +2553,26 @@ async def get_event_analysis_page():
                     .filter(line => line.length > 0)
                     .map(line => {
                         const parts = line.split(',').map(p => p.trim());
-                        return { name: parts[0], birthDate: parts[1] };
+                        if (parts.length === 2) {
+                            // Format: Name, BirthDate
+                            return { name: parts[0], birthDate: parts[1] };
+                        } else {
+                            // Format: just BirthDate
+                            return { name: parts[0], birthDate: parts[0] };
+                        }
                     });
                 
                 if (peopleList.length === 0) {
                     throw new Error('Please add at least one person');
                 }
                 
-                // Fetch event chart
-                const eventChart = await fetchChart(eventYear, eventMonth, eventDay, eventHour, eventMinute, 0, latitude, longitude, timezone);
+                // Fetch event chart using event location
+                const eventChart = await fetchChart(eventYear, eventMonth, eventDay, eventHour, eventMinute, 0, eventLatitude, eventLongitude, timezone);
                 
-                // Process each person
+                // Process each person using birth location
                 analysisData = [];
                 for (const person of peopleList) {
-                    const personData = await analyzePerson(person, eventChart, selectedPlanets, latitude, longitude, timezone);
+                    const personData = await analyzePerson(person, eventChart, selectedPlanets, birthLatitude, birthLongitude, timezone);
                     analysisData.push(personData);
                 }
                 
@@ -2483,20 +2609,27 @@ async def get_event_analysis_page():
         }
         
         async function analyzePerson(person, eventChart, planets, lat, lon, tz) {
-            // Parse birth date
+            // Parse birth date in DD/MM/YYYY format only
             const dateParts = person.birthDate.split('/');
-            let day, month, year;
             
-            if (dateParts[0].length <= 2 && dateParts[1].length <= 2) {
-                // Could be DD/MM/YY or MM/DD/YY - try both
-                day = parseInt(dateParts[0]);
-                month = parseInt(dateParts[1]);
-                year = parseInt(dateParts[2]);
-                
-                if (year < 100) year += 1900;
+            if (dateParts.length !== 3) {
+                throw new Error('Invalid date format for ' + person.name + '. Use DD/MM/YYYY');
             }
             
-            // Fetch natal chart at 12:00 AM
+            const day = parseInt(dateParts[0]);
+            const month = parseInt(dateParts[1]);
+            const year = parseInt(dateParts[2]);
+            
+            // Validate
+            if (isNaN(day) || isNaN(month) || isNaN(year)) {
+                throw new Error('Invalid date: ' + person.birthDate + '. Use DD/MM/YYYY format');
+            }
+            
+            if (day < 1 || day > 31 || month < 1 || month > 12 || year < 1900 || year > 2100) {
+                throw new Error('Invalid date values for ' + person.birthDate);
+            }
+            
+            // Fetch natal chart at 12:00 AM using birth location
             const natalChart = await fetchChart(year, month, day, 0, 0, 0, lat, lon, tz);
             
             const result = { name: person.name, planets: {} };
