@@ -1627,6 +1627,982 @@ async def get_fetcher_page():
     """
     return HTMLResponse(content=html_content)
 
+@app.get("/event-analysis", response_class=HTMLResponse)
+async def get_event_analysis_page():
+    """Serves the event analysis page for finding planetary positions in event chart"""
+    html_content = """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Chart Analysis</title>
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #1e40af;
+            --accent-color: #3b82f6;
+            --success-color: #059669;
+            --error-color: #dc2626;
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --border-color: #e5e7eb;
+            --bg-light: #f9fafb;
+            --bg-white: #ffffff;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-light);
+            color: var(--text-primary);
+            line-height: 1.5;
+            padding: 16px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: var(--bg-white);
+            padding: 20px 24px;
+            margin-bottom: 16px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 4px;
+        }
+        
+        .header p {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+        
+        .card {
+            background: var(--bg-white);
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            padding: 24px;
+            margin-bottom: 16px;
+        }
+        
+        .section-header {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-group label {
+            font-size: 0.813rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            padding: 8px 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 0.875rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+        
+        .form-group textarea {
+            min-height: 120px;
+            resize: vertical;
+            font-family: 'Courier New', monospace;
+            font-size: 0.813rem;
+        }
+        
+        .config-bar {
+            background: var(--bg-light);
+            padding: 10px 12px;
+            border-radius: 4px;
+            margin-bottom: 16px;
+            display: flex;
+            gap: 20px;
+            font-size: 0.813rem;
+            color: var(--text-secondary);
+        }
+        
+        .config-bar strong {
+            color: var(--text-primary);
+        }
+        
+        .planets-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 8px;
+            padding: 12px;
+            background: var(--bg-light);
+            border-radius: 4px;
+            margin-bottom: 16px;
+        }
+        
+        .planet-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.813rem;
+        }
+        
+        .planet-checkbox input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+        
+        .btn {
+            background: var(--primary-color);
+            color: white;
+            padding: 10px 24px;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .btn:hover {
+            background: var(--secondary-color);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .btn-success {
+            background: var(--success-color);
+        }
+        
+        .btn-success:hover {
+            background: #047857;
+        }
+        
+        .btn-container {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 16px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 24px;
+            color: var(--text-secondary);
+            display: none;
+        }
+        
+        .loading.show {
+            display: block;
+        }
+        
+        .spinner {
+            border: 2px solid var(--border-color);
+            border-top: 2px solid var(--primary-color);
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 8px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .results {
+            display: none;
+        }
+        
+        .results.show {
+            display: block;
+        }
+        
+        .table-container {
+            overflow-x: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+        }
+        
+        thead {
+            background: var(--primary-color);
+            color: white;
+        }
+        
+        th {
+            padding: 10px 12px;
+            text-align: center;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        
+        td {
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--border-color);
+            text-align: center;
+        }
+        
+        tbody tr:hover {
+            background: var(--bg-light);
+        }
+        
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .person-cell {
+            font-weight: 600;
+            text-align: left;
+            color: var(--primary-color);
+        }
+        
+        .alert {
+            padding: 12px 16px;
+            border-radius: 4px;
+            margin: 16px 0;
+            display: none;
+            font-size: 0.875rem;
+        }
+        
+        .alert.show {
+            display: block;
+        }
+        
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border-left: 4px solid var(--error-color);
+        }
+        
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+            border-left: 4px solid var(--success-color);
+        }
+        
+        .info-banner {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 4px;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            font-size: 0.813rem;
+            color: var(--text-secondary);
+        }
+        
+        .info-banner ul {
+            margin: 8px 0 0 20px;
+        }
+        
+        .info-banner li {
+            margin: 4px 0;
+        }
+        
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 22px;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #cbd5e1;
+            transition: 0.3s;
+            border-radius: 22px;
+        }
+        
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .toggle-slider {
+            background-color: var(--primary-color);
+        }
+        
+        input:checked + .toggle-slider:before {
+            transform: translateX(22px);
+        }
+        
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .planets-selector {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            table {
+                font-size: 0.75rem;
+            }
+            
+            th, td {
+                padding: 6px 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Event Chart Analysis</h1>
+            <p>Find planetary positions in event chart for multiple people</p>
+        </div>
+        
+        <div class="card">
+            <div class="config-bar">
+                <div><strong>Ayanamsa:</strong> Krishnamurti</div>
+                <div><strong>House System:</strong> Placidus (KP)</div>
+            </div>
+            
+            <div class="info-banner">
+                <strong>Instructions:</strong>
+                <ul>
+                    <li>Enter event date/time and location</li>
+                    <li>Add people (one per line): Name, BirthDate (e.g., Michael, 10/15/82)</li>
+                    <li>Select planets to analyze</li>
+                    <li>Results show format: HxH (Planet House x Nakshatra Lord House)</li>
+                </ul>
+            </div>
+            
+            <form id="analysisForm">
+                <div class="section-header">Event Details</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="eventDate">Event Date (DD/MM/YY)</label>
+                        <input type="text" id="eventDate" placeholder="17/01/26" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="eventHour">Hour (0-23)</label>
+                        <input type="number" id="eventHour" value="18" min="0" max="23" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="eventMinute">Minute</label>
+                        <input type="number" id="eventMinute" value="40" min="0" max="59" required>
+                    </div>
+                </div>
+                
+                <div class="section-header">
+                    Location (Default: London, UK)
+                    <label style="float: right; font-size: 0.75rem; font-weight: 400; text-transform: none; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <span style="color: var(--text-secondary);">Decimal</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="dmsToggle" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <span style="color: var(--text-secondary);">DMS</span>
+                    </label>
+                </div>
+                
+                <div id="decimalInputs" style="display: none;">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="latitude">Latitude</label>
+                            <input type="number" id="latitude" value="51.5074" step="0.0001" min="-90" max="90">
+                        </div>
+                        <div class="form-group">
+                            <label for="longitude">Longitude</label>
+                            <input type="number" id="longitude" value="-0.1278" step="0.0001" min="-180" max="180">
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="dmsInputs">
+                    <div style="margin-bottom: 12px;">
+                        <div style="font-size: 0.813rem; font-weight: 500; color: var(--text-primary); margin-bottom: 8px;">Latitude</div>
+                        <div style="display: grid; grid-template-columns: 1fr 80px 1fr 1fr; gap: 8px;">
+                            <div class="form-group" style="margin: 0;">
+                                <label for="latDeg" style="font-size: 0.75rem;">Degrees</label>
+                                <input type="number" id="latDeg" min="0" max="90" value="51" style="padding: 8px 10px;">
+                            </div>
+                            <div class="form-group" style="margin: 0;">
+                                <label for="latDir" style="font-size: 0.75rem;">Dir</label>
+                                <select id="latDir" style="padding: 8px 10px;">
+                                    <option value="N" selected>N</option>
+                                    <option value="S">S</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="margin: 0;">
+                                <label for="latMin" style="font-size: 0.75rem;">Minutes</label>
+                                <input type="number" id="latMin" min="0" max="59" value="30" style="padding: 8px 10px;">
+                            </div>
+                            <div class="form-group" style="margin: 0;">
+                                <label for="latSec" style="font-size: 0.75rem;">Seconds</label>
+                                <input type="number" id="latSec" min="0" max="59" value="27" step="0.01" style="padding: 8px 10px;">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-bottom: 12px;">
+                        <div style="font-size: 0.813rem; font-weight: 500; color: var(--text-primary); margin-bottom: 8px;">Longitude</div>
+                        <div style="display: grid; grid-template-columns: 1fr 80px 1fr 1fr; gap: 8px;">
+                            <div class="form-group" style="margin: 0;">
+                                <label for="lonDeg" style="font-size: 0.75rem;">Degrees</label>
+                                <input type="number" id="lonDeg" min="0" max="180" value="0" style="padding: 8px 10px;">
+                            </div>
+                            <div class="form-group" style="margin: 0;">
+                                <label for="lonDir" style="font-size: 0.75rem;">Dir</label>
+                                <select id="lonDir" style="padding: 8px 10px;">
+                                    <option value="E">E</option>
+                                    <option value="W" selected>W</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="margin: 0;">
+                                <label for="lonMin" style="font-size: 0.75rem;">Minutes</label>
+                                <input type="number" id="lonMin" min="0" max="59" value="7" style="padding: 8px 10px;">
+                            </div>
+                            <div class="form-group" style="margin: 0;">
+                                <label for="lonSec" style="font-size: 0.75rem;">Seconds</label>
+                                <input type="number" id="lonSec" min="0" max="59" value="40" step="0.01" style="padding: 8px 10px;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-row" style="margin-top: 12px;">
+                    <div class="form-group">
+                        <label for="timezone">Timezone</label>
+                        <select id="timezone" required>
+                            <optgroup label="Africa">
+                                <option value="Africa/Abidjan">Africa/Abidjan</option>
+                                <option value="Africa/Accra">Africa/Accra</option>
+                                <option value="Africa/Addis_Ababa">Africa/Addis_Ababa</option>
+                                <option value="Africa/Algiers">Africa/Algiers</option>
+                                <option value="Africa/Cairo">Africa/Cairo</option>
+                                <option value="Africa/Casablanca">Africa/Casablanca</option>
+                                <option value="Africa/Johannesburg">Africa/Johannesburg</option>
+                                <option value="Africa/Lagos">Africa/Lagos</option>
+                                <option value="Africa/Nairobi">Africa/Nairobi</option>
+                                <option value="Africa/Tunis">Africa/Tunis</option>
+                            </optgroup>
+                            <optgroup label="America - North">
+                                <option value="America/Anchorage">America/Anchorage</option>
+                                <option value="America/Chicago">America/Chicago</option>
+                                <option value="America/Denver">America/Denver</option>
+                                <option value="America/Los_Angeles">America/Los_Angeles</option>
+                                <option value="America/Mexico_City">America/Mexico_City</option>
+                                <option value="America/New_York">America/New_York</option>
+                                <option value="America/Phoenix">America/Phoenix</option>
+                                <option value="America/Toronto">America/Toronto</option>
+                                <option value="America/Vancouver">America/Vancouver</option>
+                            </optgroup>
+                            <optgroup label="America - Central">
+                                <option value="America/Belize">America/Belize</option>
+                                <option value="America/Costa_Rica">America/Costa_Rica</option>
+                                <option value="America/El_Salvador">America/El_Salvador</option>
+                                <option value="America/Guatemala">America/Guatemala</option>
+                                <option value="America/Havana">America/Havana</option>
+                                <option value="America/Jamaica">America/Jamaica</option>
+                                <option value="America/Panama">America/Panama</option>
+                            </optgroup>
+                            <optgroup label="America - South">
+                                <option value="America/Argentina/Buenos_Aires">America/Argentina/Buenos_Aires</option>
+                                <option value="America/Bogota">America/Bogota</option>
+                                <option value="America/Caracas">America/Caracas</option>
+                                <option value="America/Lima">America/Lima</option>
+                                <option value="America/Santiago">America/Santiago</option>
+                                <option value="America/Sao_Paulo">America/Sao_Paulo</option>
+                            </optgroup>
+                            <optgroup label="Asia - Middle East">
+                                <option value="Asia/Baghdad">Asia/Baghdad</option>
+                                <option value="Asia/Beirut">Asia/Beirut</option>
+                                <option value="Asia/Damascus">Asia/Damascus</option>
+                                <option value="Asia/Dubai">Asia/Dubai</option>
+                                <option value="Asia/Jerusalem">Asia/Jerusalem</option>
+                                <option value="Asia/Kuwait">Asia/Kuwait</option>
+                                <option value="Asia/Riyadh">Asia/Riyadh</option>
+                                <option value="Asia/Tehran">Asia/Tehran</option>
+                            </optgroup>
+                            <optgroup label="Asia - Central">
+                                <option value="Asia/Almaty">Asia/Almaty</option>
+                                <option value="Asia/Karachi">Asia/Karachi</option>
+                                <option value="Asia/Tashkent">Asia/Tashkent</option>
+                            </optgroup>
+                            <optgroup label="Asia - South">
+                                <option value="Asia/Colombo">Asia/Colombo</option>
+                                <option value="Asia/Dhaka">Asia/Dhaka</option>
+                                <option value="Asia/Kathmandu">Asia/Kathmandu</option>
+                                <option value="Asia/Kolkata">Asia/Kolkata</option>
+                            </optgroup>
+                            <optgroup label="Asia - East">
+                                <option value="Asia/Bangkok">Asia/Bangkok</option>
+                                <option value="Asia/Hong_Kong">Asia/Hong_Kong</option>
+                                <option value="Asia/Jakarta">Asia/Jakarta</option>
+                                <option value="Asia/Kuala_Lumpur">Asia/Kuala_Lumpur</option>
+                                <option value="Asia/Manila">Asia/Manila</option>
+                                <option value="Asia/Seoul">Asia/Seoul</option>
+                                <option value="Asia/Shanghai">Asia/Shanghai</option>
+                                <option value="Asia/Singapore">Asia/Singapore</option>
+                                <option value="Asia/Taipei">Asia/Taipei</option>
+                                <option value="Asia/Tokyo">Asia/Tokyo</option>
+                            </optgroup>
+                            <optgroup label="Atlantic">
+                                <option value="Atlantic/Azores">Atlantic/Azores</option>
+                                <option value="Atlantic/Bermuda">Atlantic/Bermuda</option>
+                                <option value="Atlantic/Cape_Verde">Atlantic/Cape_Verde</option>
+                                <option value="Atlantic/Reykjavik">Atlantic/Reykjavik</option>
+                            </optgroup>
+                            <optgroup label="Australia">
+                                <option value="Australia/Adelaide">Australia/Adelaide</option>
+                                <option value="Australia/Brisbane">Australia/Brisbane</option>
+                                <option value="Australia/Darwin">Australia/Darwin</option>
+                                <option value="Australia/Melbourne">Australia/Melbourne</option>
+                                <option value="Australia/Perth">Australia/Perth</option>
+                                <option value="Australia/Sydney">Australia/Sydney</option>
+                            </optgroup>
+                            <optgroup label="Europe - West">
+                                <option value="Europe/Dublin">Europe/Dublin</option>
+                                <option value="Europe/Lisbon">Europe/Lisbon</option>
+                                <option value="Europe/London" selected>Europe/London</option>
+                            </optgroup>
+                            <optgroup label="Europe - Central">
+                                <option value="Europe/Amsterdam">Europe/Amsterdam</option>
+                                <option value="Europe/Berlin">Europe/Berlin</option>
+                                <option value="Europe/Brussels">Europe/Brussels</option>
+                                <option value="Europe/Copenhagen">Europe/Copenhagen</option>
+                                <option value="Europe/Madrid">Europe/Madrid</option>
+                                <option value="Europe/Paris">Europe/Paris</option>
+                                <option value="Europe/Rome">Europe/Rome</option>
+                                <option value="Europe/Stockholm">Europe/Stockholm</option>
+                                <option value="Europe/Vienna">Europe/Vienna</option>
+                                <option value="Europe/Zurich">Europe/Zurich</option>
+                            </optgroup>
+                            <optgroup label="Europe - East">
+                                <option value="Europe/Athens">Europe/Athens</option>
+                                <option value="Europe/Bucharest">Europe/Bucharest</option>
+                                <option value="Europe/Helsinki">Europe/Helsinki</option>
+                                <option value="Europe/Istanbul">Europe/Istanbul</option>
+                                <option value="Europe/Kiev">Europe/Kiev</option>
+                                <option value="Europe/Moscow">Europe/Moscow</option>
+                                <option value="Europe/Warsaw">Europe/Warsaw</option>
+                            </optgroup>
+                            <optgroup label="Pacific">
+                                <option value="Pacific/Auckland">Pacific/Auckland</option>
+                                <option value="Pacific/Fiji">Pacific/Fiji</option>
+                                <option value="Pacific/Guam">Pacific/Guam</option>
+                                <option value="Pacific/Honolulu">Pacific/Honolulu</option>
+                                <option value="Pacific/Pago_Pago">Pacific/Pago_Pago</option>
+                                <option value="Pacific/Tahiti">Pacific/Tahiti</option>
+                            </optgroup>
+                            <optgroup label="UTC">
+                                <option value="UTC">UTC</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="section-header">People (Name, BirthDate - one per line)</div>
+                <div class="form-group">
+                    <label for="people">Format: Name, DD/MM/YY or MM/DD/YY</label>
+                    <textarea id="people" placeholder="Michael, 10/15/82&#10;James, 14/12/84&#10;Thomas, 15/5/88" required></textarea>
+                </div>
+                
+                <div class="section-header">Select Planets to Analyze</div>
+                <div class="planets-selector">
+                    <label class="planet-checkbox">
+                        <input type="checkbox" value="Sun" checked> Sun
+                    </label>
+                    <label class="planet-checkbox">
+                        <input type="checkbox" value="Venus" checked> Venus
+                    </label>
+                    <label class="planet-checkbox">
+                        <input type="checkbox" value="Mars" checked> Mars
+                    </label>
+                    <label class="planet-checkbox">
+                        <input type="checkbox" value="Mercury" checked> Mercury
+                    </label>
+                    <label class="planet-checkbox">
+                        <input type="checkbox" value="Rahu" checked> Rahu
+                    </label>
+                    <label class="planet-checkbox">
+                        <input type="checkbox" value="Ketu" checked> Ketu
+                    </label>
+                    <label class="planet-checkbox">
+                        <input type="checkbox" value="Jupiter" checked> Jupiter
+                    </label>
+                    <label class="planet-checkbox">
+                        <input type="checkbox" value="Saturn" checked> Saturn
+                    </label>
+                </div>
+                
+                <div class="btn-container">
+                    <button type="submit" class="btn" id="submitBtn">
+                        <span>▶</span> Analyze
+                    </button>
+                </div>
+            </form>
+            
+            <div class="alert alert-error" id="errorMsg"></div>
+            <div class="alert alert-success" id="successMsg"></div>
+            
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Analyzing charts... Please wait...</p>
+            </div>
+        </div>
+        
+        <div class="results" id="results">
+            <div class="card">
+                <div class="section-header">Results</div>
+                
+                <div class="btn-container" style="margin-bottom: 16px;">
+                    <button class="btn btn-success" id="copyBtn">
+                        <span>⎘</span> Copy to Clipboard
+                    </button>
+                </div>
+                
+                <div class="table-container">
+                    <table id="resultsTable">
+                        <thead id="tableHead"></thead>
+                        <tbody id="tableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const form = document.getElementById('analysisForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const copyBtn = document.getElementById('copyBtn');
+        const loading = document.getElementById('loading');
+        const results = document.getElementById('results');
+        const errorMsg = document.getElementById('errorMsg');
+        const successMsg = document.getElementById('successMsg');
+        const dmsToggle = document.getElementById('dmsToggle');
+        const decimalInputs = document.getElementById('decimalInputs');
+        const dmsInputs = document.getElementById('dmsInputs');
+        
+        let analysisData = [];
+        
+        // Toggle between decimal and DMS inputs
+        dmsToggle.addEventListener('change', function() {
+            if (this.checked) {
+                decimalInputs.style.display = 'none';
+                dmsInputs.style.display = 'block';
+            } else {
+                decimalInputs.style.display = 'block';
+                dmsInputs.style.display = 'none';
+            }
+        });
+        
+        // Convert DMS to Decimal Degrees
+        function dmsToDecimal(degrees, minutes, seconds, direction) {
+            let decimal = parseFloat(degrees) + parseFloat(minutes) / 60 + parseFloat(seconds) / 3600;
+            if (direction === 'S' || direction === 'W') {
+                decimal = -decimal;
+            }
+            return decimal;
+        }
+        
+        // Get latitude and longitude based on current mode
+        function getCoordinates() {
+            if (dmsToggle.checked) {
+                // DMS Mode
+                const latDeg = document.getElementById('latDeg').value;
+                const latMin = document.getElementById('latMin').value;
+                const latSec = document.getElementById('latSec').value;
+                const latDir = document.getElementById('latDir').value;
+                
+                const lonDeg = document.getElementById('lonDeg').value;
+                const lonMin = document.getElementById('lonMin').value;
+                const lonSec = document.getElementById('lonSec').value;
+                const lonDir = document.getElementById('lonDir').value;
+                
+                const latitude = dmsToDecimal(latDeg, latMin, latSec, latDir);
+                const longitude = dmsToDecimal(lonDeg, lonMin, lonSec, lonDir);
+                
+                return { latitude, longitude };
+            } else {
+                // Decimal Mode
+                const latitude = parseFloat(document.getElementById('latitude').value);
+                const longitude = parseFloat(document.getElementById('longitude').value);
+                
+                return { latitude, longitude };
+            }
+        }
+        
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            errorMsg.classList.remove('show');
+            successMsg.classList.remove('show');
+            results.classList.remove('show');
+            loading.classList.add('show');
+            submitBtn.disabled = true;
+            
+            try {
+                // Parse event date
+                const eventDateStr = document.getElementById('eventDate').value;
+                const eventParts = eventDateStr.split('/');
+                const eventDay = parseInt(eventParts[0]);
+                const eventMonth = parseInt(eventParts[1]);
+                const eventYear = parseInt(eventParts[2]) + 2000; // Assume 20xx
+                const eventHour = parseInt(document.getElementById('eventHour').value);
+                const eventMinute = parseInt(document.getElementById('eventMinute').value);
+                
+                const coords = getCoordinates();
+                const latitude = coords.latitude;
+                const longitude = coords.longitude;
+                const timezone = document.getElementById('timezone').value;
+                
+                // Get selected planets
+                const selectedPlanets = Array.from(document.querySelectorAll('.planet-checkbox input:checked'))
+                    .map(cb => cb.value);
+                
+                if (selectedPlanets.length === 0) {
+                    throw new Error('Please select at least one planet');
+                }
+                
+                // Parse people list
+                const peopleText = document.getElementById('people').value;
+                const peopleList = peopleText.split('\\n')
+                    .map(line => line.trim())
+                    .filter(line => line.length > 0)
+                    .map(line => {
+                        const parts = line.split(',').map(p => p.trim());
+                        return { name: parts[0], birthDate: parts[1] };
+                    });
+                
+                if (peopleList.length === 0) {
+                    throw new Error('Please add at least one person');
+                }
+                
+                // Fetch event chart
+                const eventChart = await fetchChart(eventYear, eventMonth, eventDay, eventHour, eventMinute, 0, latitude, longitude, timezone);
+                
+                // Process each person
+                analysisData = [];
+                for (const person of peopleList) {
+                    const personData = await analyzePerson(person, eventChart, selectedPlanets, latitude, longitude, timezone);
+                    analysisData.push(personData);
+                }
+                
+                displayResults(analysisData, selectedPlanets);
+                results.classList.add('show');
+                results.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                
+            } catch (error) {
+                errorMsg.textContent = 'Error: ' + error.message;
+                errorMsg.classList.add('show');
+            } finally {
+                loading.classList.remove('show');
+                submitBtn.disabled = false;
+            }
+        });
+        
+        async function fetchChart(year, month, day, hour, minute, second, lat, lon, tz) {
+            const response = await fetch('/get_all_horoscope_data', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    year, month, day, hour, minute, second,
+                    latitude: lat,
+                    longitude: lon,
+                    utc: tz,
+                    ayanamsa: 'Krishnamurti',
+                    house_system: 'Placidus',
+                    return_style: 'string'
+                })
+            });
+            
+            if (!response.ok) throw new Error('Failed to fetch chart');
+            return await response.json();
+        }
+        
+        async function analyzePerson(person, eventChart, planets, lat, lon, tz) {
+            // Parse birth date
+            const dateParts = person.birthDate.split('/');
+            let day, month, year;
+            
+            if (dateParts[0].length <= 2 && dateParts[1].length <= 2) {
+                // Could be DD/MM/YY or MM/DD/YY - try both
+                day = parseInt(dateParts[0]);
+                month = parseInt(dateParts[1]);
+                year = parseInt(dateParts[2]);
+                
+                if (year < 100) year += 1900;
+            }
+            
+            // Fetch natal chart at 12:00 AM
+            const natalChart = await fetchChart(year, month, day, 0, 0, 0, lat, lon, tz);
+            
+            const result = { name: person.name, planets: {} };
+            
+            for (const planetName of planets) {
+                const planetData = natalChart.planets_data.find(p => p.Object === planetName);
+                if (!planetData) continue;
+                
+                const planetLon = planetData.LonDecDeg;
+                const nakshatraLord = planetData.NakshatraLord;
+                
+                // Find nakshatra lord's longitude
+                const nakshatraLordData = natalChart.planets_data.find(p => p.Object === nakshatraLord);
+                const nakshatraLordLon = nakshatraLordData ? nakshatraLordData.LonDecDeg : null;
+                
+                // Find which event house each falls into
+                const planetHouse = findHouseForLongitude(planetLon, eventChart.houses_data);
+                const nakshatraHouse = nakshatraLordLon ? findHouseForLongitude(nakshatraLordLon, eventChart.houses_data) : '-';
+                
+                result.planets[planetName] = `${planetHouse}x${nakshatraHouse}`;
+            }
+            
+            return result;
+        }
+        
+        function findHouseForLongitude(longitude, housesData) {
+            // Normalize longitude to 0-360
+            let lon = longitude % 360;
+            if (lon < 0) lon += 360;
+            
+            for (let i = 0; i < 12; i++) {
+                const currentHouse = housesData[i];
+                const nextHouse = housesData[(i + 1) % 12];
+                
+                let currentCusp = currentHouse.LonDecDeg % 360;
+                let nextCusp = nextHouse.LonDecDeg % 360;
+                
+                if (currentCusp < 0) currentCusp += 360;
+                if (nextCusp < 0) nextCusp += 360;
+                
+                // Handle wrap around
+                if (currentCusp > nextCusp) {
+                    if (lon >= currentCusp || lon < nextCusp) {
+                        return currentHouse.HouseNr;
+                    }
+                } else {
+                    if (lon >= currentCusp && lon < nextCusp) {
+                        return currentHouse.HouseNr;
+                    }
+                }
+            }
+            
+            return 1; // Default to house 1
+        }
+        
+        function displayResults(data, planets) {
+            const thead = document.getElementById('tableHead');
+            const tbody = document.getElementById('tableBody');
+            
+            // Create header
+            let headerHtml = '<tr><th>PERSON</th>';
+            planets.forEach(planet => {
+                headerHtml += `<th>${planet.toLowerCase()}</th>`;
+            });
+            headerHtml += '</tr>';
+            thead.innerHTML = headerHtml;
+            
+            // Create rows
+            tbody.innerHTML = '';
+            data.forEach(person => {
+                let row = '<tr>';
+                row += `<td class="person-cell">${person.name}</td>`;
+                planets.forEach(planet => {
+                    row += `<td>${person.planets[planet] || '-'}</td>`;
+                });
+                row += '</tr>';
+                tbody.innerHTML += row;
+            });
+        }
+        
+        copyBtn.addEventListener('click', () => {
+            const selectedPlanets = Array.from(document.querySelectorAll('.planet-checkbox input:checked'))
+                .map(cb => cb.value);
+            
+            let clipboardText = 'PERSON\\t' + selectedPlanets.map(p => p.toLowerCase()).join('\\t') + '\\n';
+            
+            analysisData.forEach(person => {
+                clipboardText += person.name + '\\t';
+                clipboardText += selectedPlanets.map(p => person.planets[p] || '-').join('\\t') + '\\n';
+            });
+            
+            navigator.clipboard.writeText(clipboardText).then(() => {
+                successMsg.textContent = 'Data copied to clipboard successfully';
+                successMsg.classList.add('show');
+                setTimeout(() => successMsg.classList.remove('show'), 3000);
+            }).catch(err => {
+                errorMsg.textContent = 'Failed to copy: ' + err.message;
+                errorMsg.classList.add('show');
+            });
+        });
+    </script>
+</body>
+</html>
+    """
+    return HTMLResponse(content=html_content)
+
 @app.post("/get_all_horoscope_data")
 async def get_chart_data(input: ChartInput):
     """
