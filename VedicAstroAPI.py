@@ -2924,11 +2924,11 @@ async def get_event_analysis_page():
                     hasSignal = true;
                 }
                 
-                // Type 2d: Planet1 in same sign as Planet2's nakshatra lord
-                if (planet2InPerson.NakshatraLord) {
-                    const planet2NakshatraLordData = personChart.planets_data.find(p => p.Object === planet2InPerson.NakshatraLord);
-                    if (planet2NakshatraLordData && planet1InPerson.Rasi === planet2NakshatraLordData.Rasi) {
-                        reasons.push(planet1 + ' in same sign as ' + planet2 + '&apos;s nakshatra lord (' + planet2InPerson.NakshatraLord + ')');
+                // Type 2d: Planet1's nakshatra lord in same sign as Planet2
+                if (planet1InPerson.NakshatraLord) {
+                    const planet1NakshatraLordData = personChart.planets_data.find(p => p.Object === planet1InPerson.NakshatraLord);
+                    if (planet1NakshatraLordData && planet1NakshatraLordData.Rasi === planet2InPerson.Rasi) {
+                        reasons.push(planet1 + '&apos;s nakshatra lord (' + planet1InPerson.NakshatraLord + ') in same sign as ' + planet2 + ' (' + planet2InPerson.Rasi + ')');
                         hasSignal = true;
                     }
                 }
