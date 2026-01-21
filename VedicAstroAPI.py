@@ -2846,12 +2846,6 @@ async def get_event_analysis_page():
                 return;
             }
             
-            if (planet1 === planet2) {
-                signalErrorMsg.textContent = 'Please select two different planets';
-                signalErrorMsg.classList.add('show');
-                return;
-            }
-            
             if (!eventChartData || peopleChartsData.length === 0) {
                 signalErrorMsg.textContent = 'Please generate analysis first';
                 signalErrorMsg.classList.add('show');
