@@ -2408,6 +2408,77 @@ async def get_event_analysis_page():
                     </table>
                 </div>
             </div>
+            
+            <div class="card">
+                <div class="section-header">Signal Detector</div>
+                
+                <div class="info-banner">
+                    <strong>Check if 2 planets create a signal for each person</strong>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="signalPlanet1">Planet 1</label>
+                        <select id="signalPlanet1">
+                            <option value="">Select Planet</option>
+                            <option value="Sun">Sun</option>
+                            <option value="Moon">Moon</option>
+                            <option value="Mercury">Mercury</option>
+                            <option value="Venus">Venus</option>
+                            <option value="Mars">Mars</option>
+                            <option value="Jupiter">Jupiter</option>
+                            <option value="Saturn">Saturn</option>
+                            <option value="Rahu">Rahu</option>
+                            <option value="Ketu">Ketu</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="signalPlanet2">Planet 2</label>
+                        <select id="signalPlanet2">
+                            <option value="">Select Planet</option>
+                            <option value="Sun">Sun</option>
+                            <option value="Moon">Moon</option>
+                            <option value="Mercury">Mercury</option>
+                            <option value="Venus">Venus</option>
+                            <option value="Mars">Mars</option>
+                            <option value="Jupiter">Jupiter</option>
+                            <option value="Saturn">Saturn</option>
+                            <option value="Rahu">Rahu</option>
+                            <option value="Ketu">Ketu</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="btn-container">
+                    <button class="btn" id="checkSignalsBtn">
+                        <span>▶</span> Check Signals
+                    </button>
+                </div>
+                
+                <div class="alert alert-error" id="signalErrorMsg"></div>
+                
+                <div class="loading" id="signalLoading">
+                    <div class="spinner"></div>
+                    <p>Checking signals...</p>
+                </div>
+                
+                <div id="signalResults" style="display: none; margin-top: 16px;">
+                    <div class="section-header">Signal Results</div>
+                    <div class="table-container">
+                        <table id="signalTable">
+                            <thead>
+                                <tr>
+                                    <th>Person</th>
+                                    <th>Signal</th>
+                                    <th>Count</th>
+                                    <th>Reason</th>
+                                </tr>
+                            </thead>
+                            <tbody id="signalTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
     
@@ -2569,11 +2640,16 @@ async def get_event_analysis_page():
                 // Fetch event chart using event location
                 const eventChart = await fetchChart(eventYear, eventMonth, eventDay, eventHour, eventMinute, 0, eventLatitude, eventLongitude, timezone);
                 
+                // Store event chart data for signal detection
+                eventChartData = eventChart;
+                
                 // Process each person using birth location
                 analysisData = [];
+                peopleChartsData = [];
                 for (const person of peopleList) {
                     const personData = await analyzePerson(person, eventChart, selectedPlanets, birthLatitude, birthLongitude, timezone);
                     analysisData.push(personData);
+                    peopleChartsData.push(personData.birthChart);
                 }
                 
                 displayResults(analysisData, selectedPlanets);
@@ -2632,7 +2708,7 @@ async def get_event_analysis_page():
             // Fetch natal chart at 12:00 AM using birth location
             const natalChart = await fetchChart(year, month, day, 0, 0, 0, lat, lon, tz);
             
-            const result = { name: person.name, planets: {} };
+            const result = { name: person.name, planets: {}, birthChart: natalChart };
             
             for (const planetName of planets) {
                 const planetData = natalChart.planets_data.find(p => p.Object === planetName);
@@ -2730,6 +2806,198 @@ async def get_event_analysis_page():
                 errorMsg.classList.add('show');
             });
         });
+        
+        // Signal Detection Logic
+        const checkSignalsBtn = document.getElementById('checkSignalsBtn');
+        const signalErrorMsg = document.getElementById('signalErrorMsg');
+        const signalLoading = document.getElementById('signalLoading');
+        const signalResults = document.getElementById('signalResults');
+        const signalTableBody = document.getElementById('signalTableBody');
+        
+        let eventChartData = null;
+        let peopleChartsData = [];
+        
+        // Sign rulership mapping
+        const signRulership = {
+            'Aries': 'Mars',
+            'Taurus': 'Venus',
+            'Gemini': 'Mercury',
+            'Cancer': 'Moon',
+            'Leo': 'Sun',
+            'Virgo': 'Mercury',
+            'Libra': 'Venus',
+            'Scorpio': 'Mars',
+            'Sagittarius': 'Jupiter',
+            'Capricorn': 'Saturn',
+            'Aquarius': 'Saturn',
+            'Pisces': 'Jupiter'
+        };
+        
+        checkSignalsBtn.addEventListener('click', async () => {
+            const planet1 = document.getElementById('signalPlanet1').value;
+            const planet2 = document.getElementById('signalPlanet2').value;
+            
+            signalErrorMsg.classList.remove('show');
+            signalResults.style.display = 'none';
+            
+            if (!planet1 || !planet2) {
+                signalErrorMsg.textContent = 'Please select both planets';
+                signalErrorMsg.classList.add('show');
+                return;
+            }
+            
+            if (planet1 === planet2) {
+                signalErrorMsg.textContent = 'Please select two different planets';
+                signalErrorMsg.classList.add('show');
+                return;
+            }
+            
+            if (!eventChartData || peopleChartsData.length === 0) {
+                signalErrorMsg.textContent = 'Please generate analysis first';
+                signalErrorMsg.classList.add('show');
+                return;
+            }
+            
+            signalLoading.classList.add('show');
+            checkSignalsBtn.disabled = true;
+            
+            try {
+                const signalChecks = [];
+                
+                for (let i = 0; i < peopleChartsData.length; i++) {
+                    const personData = peopleChartsData[i];
+                    const personName = analysisData[i].name;
+                    
+                    const signalResult = checkSignalBetweenPlanets(
+                        planet1, 
+                        planet2, 
+                        eventChartData, 
+                        personData
+                    );
+                    
+                    signalChecks.push({
+                        name: personName,
+                        hasSignal: signalResult.hasSignal,
+                        reasons: signalResult.reasons
+                    });
+                }
+                
+                displaySignalResults(planet1, planet2, signalChecks);
+                signalResults.style.display = 'block';
+                
+            } catch (error) {
+                signalErrorMsg.textContent = 'Error: ' + error.message;
+                signalErrorMsg.classList.add('show');
+            } finally {
+                signalLoading.classList.remove('show');
+                checkSignalsBtn.disabled = false;
+            }
+        });
+        
+        function checkSignalBetweenPlanets(planet1, planet2, eventChart, personChart) {
+            const reasons = [];
+            let hasSignal = false;
+            
+            // Type 1: Conjunction in event chart (same sign, not house)
+            const planet1InEvent = eventChart.planets_data.find(p => p.Object === planet1);
+            const planet2InEvent = eventChart.planets_data.find(p => p.Object === planet2);
+            
+            if (planet1InEvent && planet2InEvent && planet1InEvent.Rasi === planet2InEvent.Rasi) {
+                reasons.push('Conjunction in event chart (both in ' + planet1InEvent.Rasi + ')');
+                hasSignal = true;
+            }
+            
+            // Type 2 & 3: Check in person's birth chart
+            const planet1InPerson = personChart.planets_data.find(p => p.Object === planet1);
+            const planet2InPerson = personChart.planets_data.find(p => p.Object === planet2);
+            
+            if (planet1InPerson && planet2InPerson) {
+                // Type 2a: Both planets in the same sign in birth chart
+                if (planet1InPerson.Rasi === planet2InPerson.Rasi) {
+                    reasons.push('Both ' + planet1 + ' and ' + planet2 + ' in ' + planet1InPerson.Rasi + ' in birth chart');
+                    hasSignal = true;
+                }
+                
+                // Type 2b: Planet1 in nakshatra of Planet2
+                if (planet1InPerson.NakshatraLord === planet2) {
+                    reasons.push(planet1 + ' in nakshatra of ' + planet2);
+                    hasSignal = true;
+                }
+                
+                // Type 2c: Planet2 in nakshatra of Planet1
+                if (planet2InPerson.NakshatraLord === planet1) {
+                    reasons.push(planet2 + ' in nakshatra of ' + planet1);
+                    hasSignal = true;
+                }
+                
+                // Type 2d: Planet1 in same sign as Planet2's nakshatra lord
+                if (planet2InPerson.NakshatraLord) {
+                    const planet2NakshatraLordData = personChart.planets_data.find(p => p.Object === planet2InPerson.NakshatraLord);
+                    if (planet2NakshatraLordData && planet1InPerson.Rasi === planet2NakshatraLordData.Rasi) {
+                        reasons.push(planet1 + ' in same sign as ' + planet2 + '&apos;s nakshatra lord (' + planet2InPerson.NakshatraLord + ')');
+                        hasSignal = true;
+                    }
+                }
+                
+                // Type 2e: Planet2 in same sign as Planet1's nakshatra lord
+                if (planet1InPerson.NakshatraLord) {
+                    const planet1NakshatraLordData = personChart.planets_data.find(p => p.Object === planet1InPerson.NakshatraLord);
+                    if (planet1NakshatraLordData && planet2InPerson.Rasi === planet1NakshatraLordData.Rasi) {
+                        reasons.push(planet2 + ' in same sign as ' + planet1 + '&apos;s nakshatra lord (' + planet1InPerson.NakshatraLord + ')');
+                        hasSignal = true;
+                    }
+                }
+                
+                // Type 3: Planet1 in sign ruled by Planet2
+                const planet1Sign = planet1InPerson.Rasi;
+                const signRuler = signRulership[planet1Sign];
+                
+                if (signRuler === planet2) {
+                    reasons.push(planet1 + ' in ' + planet1Sign + ' (ruled by ' + planet2 + ')');
+                    hasSignal = true;
+                }
+                
+                // Also check reverse: Planet2 in sign ruled by Planet1
+                const planet2Sign = planet2InPerson.Rasi;
+                const planet2SignRuler = signRulership[planet2Sign];
+                
+                if (planet2SignRuler === planet1) {
+                    reasons.push(planet2 + ' in ' + planet2Sign + ' (ruled by ' + planet1 + ')');
+                    hasSignal = true;
+                }
+            }
+            
+            return {
+                hasSignal: hasSignal,
+                reasons: reasons.length > 0 ? reasons : ['No signal found']
+            };
+        }
+        
+        function displaySignalResults(planet1, planet2, results) {
+            signalTableBody.innerHTML = '';
+            
+            results.forEach(result => {
+                const row = document.createElement('tr');
+                const signalCell = result.hasSignal 
+                    ? '<td style="color: var(--success-color); font-weight: 600;">YES</td>'
+                    : '<td style="color: var(--error-color);">NO</td>';
+                
+                // Count the number of signals (excluding "No signal found")
+                const signalCount = result.reasons.filter(r => r !== 'No signal found').length;
+                const xMarks = result.hasSignal ? 'x '.repeat(signalCount).trim() : '';
+                const countCell = result.hasSignal 
+                    ? `<td style="color: var(--success-color); font-weight: 600;">${xMarks}</td>`
+                    : '<td></td>';
+                
+                row.innerHTML = `
+                    <td class="person-cell">${result.name}</td>
+                    ${signalCell}
+                    ${countCell}
+                    <td style="font-size: 0.813rem;">${result.reasons.join('; ')}</td>
+                `;
+                signalTableBody.appendChild(row);
+            });
+        }
     </script>
 </body>
 </html>
