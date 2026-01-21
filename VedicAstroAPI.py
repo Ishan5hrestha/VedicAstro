@@ -2898,47 +2898,58 @@ async def get_event_analysis_page():
             const reasons = [];
             let hasSignal = false;
             
-            // Type 1: Conjunction in event chart (same sign, not house)
-            const planet1InEvent = eventChart.planets_data.find(p => p.Object === planet1);
-            const planet2InEvent = eventChart.planets_data.find(p => p.Object === planet2);
-            
-            if (planet1InEvent && planet2InEvent && planet1InEvent.Rasi === planet2InEvent.Rasi) {
-                reasons.push('Conjunction in event chart (both in ' + planet1InEvent.Rasi + ')');
-                hasSignal = true;
-            }
-            
-            // Type 2 & 3: Check in person's birth chart
+            // Get planet positions
             const planet1InPerson = personChart.planets_data.find(p => p.Object === planet1);
             const planet2InPerson = personChart.planets_data.find(p => p.Object === planet2);
+            const planet2InEvent = eventChart.planets_data.find(p => p.Object === planet2);
             
+            // Type 1: Cross-chart connection (Person's chart TO Event chart)
+            if (planet1InPerson && planet2InEvent) {
+                // Type 1a: Planet1 (person) in same sign as Planet2 (event)
+                if (planet1InPerson.Rasi === planet2InEvent.Rasi) {
+                    reasons.push(planet1 + ' (person) in same sign as ' + planet2 + ' (event) - both in ' + planet1InPerson.Rasi);
+                    hasSignal = true;
+                }
+                
+                // Type 1b: Planet1's nakshatra lord (person) in same sign as Planet2 (event)
+                if (planet1InPerson.NakshatraLord) {
+                    const planet1NakshatraLordInPerson = personChart.planets_data.find(p => p.Object === planet1InPerson.NakshatraLord);
+                    if (planet1NakshatraLordInPerson && planet1NakshatraLordInPerson.Rasi === planet2InEvent.Rasi) {
+                        reasons.push(planet1 + '&apos;s nakshatra lord (' + planet1InPerson.NakshatraLord + ') (person) in same sign as ' + planet2 + ' (event) - both in ' + planet1NakshatraLordInPerson.Rasi);
+                        hasSignal = true;
+                    }
+                }
+            }
+            
+            // Type 2: Within person's birth chart only
             if (planet1InPerson && planet2InPerson) {
                 // Type 2a: Both planets in the same sign in birth chart
                 if (planet1InPerson.Rasi === planet2InPerson.Rasi) {
-                    reasons.push('Both ' + planet1 + ' and ' + planet2 + ' in ' + planet1InPerson.Rasi + ' in birth chart');
+                    reasons.push('Both ' + planet1 + ' and ' + planet2 + ' in ' + planet1InPerson.Rasi + ' (birth chart)');
                     hasSignal = true;
                 }
                 
-                // Type 2b: Planet1 in nakshatra of Planet2
+                // Type 2b: Planet1 in nakshatra of Planet2 (birth chart)
                 if (planet1InPerson.NakshatraLord === planet2) {
-                    reasons.push(planet1 + ' in nakshatra of ' + planet2);
+                    reasons.push(planet1 + ' in nakshatra of ' + planet2 + ' (birth chart)');
                     hasSignal = true;
                 }
                 
-                // Type 2d: Planet1's nakshatra lord in same sign as Planet2
+                // Type 2c: Planet1's nakshatra lord in same sign as Planet2 (birth chart)
                 if (planet1InPerson.NakshatraLord) {
                     const planet1NakshatraLordData = personChart.planets_data.find(p => p.Object === planet1InPerson.NakshatraLord);
                     if (planet1NakshatraLordData && planet1NakshatraLordData.Rasi === planet2InPerson.Rasi) {
-                        reasons.push(planet1 + '&apos;s nakshatra lord (' + planet1InPerson.NakshatraLord + ') in same sign as ' + planet2 + ' (' + planet2InPerson.Rasi + ')');
+                        reasons.push(planet1 + '&apos;s nakshatra lord (' + planet1InPerson.NakshatraLord + ') in same sign as ' + planet2 + ' in ' + planet2InPerson.Rasi + ' (birth chart)');
                         hasSignal = true;
                     }
                 }
                 
-                // Type 3: Planet1 in sign ruled by Planet2
+                // Type 2d: Planet1 in sign ruled by Planet2 (birth chart)
                 const planet1Sign = planet1InPerson.Rasi;
                 const signRuler = signRulership[planet1Sign];
                 
                 if (signRuler === planet2) {
-                    reasons.push(planet1 + ' in ' + planet1Sign + ' (ruled by ' + planet2 + ')');
+                    reasons.push(planet1 + ' in ' + planet1Sign + ' (ruled by ' + planet2 + ') (birth chart)');
                     hasSignal = true;
                 }
             }
