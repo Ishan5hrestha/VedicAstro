@@ -2924,26 +2924,11 @@ async def get_event_analysis_page():
                     hasSignal = true;
                 }
                 
-                // Type 2c: Planet2 in nakshatra of Planet1
-                if (planet2InPerson.NakshatraLord === planet1) {
-                    reasons.push(planet2 + ' in nakshatra of ' + planet1);
-                    hasSignal = true;
-                }
-                
                 // Type 2d: Planet1 in same sign as Planet2's nakshatra lord
                 if (planet2InPerson.NakshatraLord) {
                     const planet2NakshatraLordData = personChart.planets_data.find(p => p.Object === planet2InPerson.NakshatraLord);
                     if (planet2NakshatraLordData && planet1InPerson.Rasi === planet2NakshatraLordData.Rasi) {
                         reasons.push(planet1 + ' in same sign as ' + planet2 + '&apos;s nakshatra lord (' + planet2InPerson.NakshatraLord + ')');
-                        hasSignal = true;
-                    }
-                }
-                
-                // Type 2e: Planet2 in same sign as Planet1's nakshatra lord
-                if (planet1InPerson.NakshatraLord) {
-                    const planet1NakshatraLordData = personChart.planets_data.find(p => p.Object === planet1InPerson.NakshatraLord);
-                    if (planet1NakshatraLordData && planet2InPerson.Rasi === planet1NakshatraLordData.Rasi) {
-                        reasons.push(planet2 + ' in same sign as ' + planet1 + '&apos;s nakshatra lord (' + planet1InPerson.NakshatraLord + ')');
                         hasSignal = true;
                     }
                 }
@@ -2954,15 +2939,6 @@ async def get_event_analysis_page():
                 
                 if (signRuler === planet2) {
                     reasons.push(planet1 + ' in ' + planet1Sign + ' (ruled by ' + planet2 + ')');
-                    hasSignal = true;
-                }
-                
-                // Also check reverse: Planet2 in sign ruled by Planet1
-                const planet2Sign = planet2InPerson.Rasi;
-                const planet2SignRuler = signRulership[planet2Sign];
-                
-                if (planet2SignRuler === planet1) {
-                    reasons.push(planet2 + ' in ' + planet2Sign + ' (ruled by ' + planet1 + ')');
                     hasSignal = true;
                 }
             }
